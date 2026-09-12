@@ -1,10 +1,6 @@
 import { useState } from "react";
 
-function Watering({
-  wateringSchedule,
-  setWateringSchedule,
-}) {
-
+function Watering({ wateringSchedule, setWateringSchedule }) {
   const [wateringDay, setWateringDay] = useState("Monday");
   const [wateringTime, setWateringTime] = useState("06:00");
   const [wateringDuration, setWateringDuration] = useState(20);
@@ -132,33 +128,45 @@ function Watering({
             <h3>Watering Days</h3>
           </div>
           <div className="watering-controls">
-            <select
-              value={wateringDay}
-              onChange={(event) => setWateringDay(event.target.value)}
-            >
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
-            </select>
+            <label className="watering-field">
+              <span>Day</span>
 
-            <input
-              type="time"
-              value={wateringTime}
-              onChange={(event) => setWateringTime(event.target.value)}
-            />
+              <select
+                value={wateringDay}
+                onChange={(event) => setWateringDay(event.target.value)}
+              >
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </label>
 
-            <input
-              type="number"
-              min="1"
-              value={wateringDuration}
-              onChange={(event) =>
-                setWateringDuration(Number(event.target.value))
-              }
-            />
+            <label className="watering-field">
+              <span>Time</span>
+
+              <input
+                type="time"
+                value={wateringTime}
+                onChange={(event) => setWateringTime(event.target.value)}
+              />
+            </label>
+
+            <label className="watering-field">
+              <span>Duration (mins)</span>
+
+              <input
+                type="number"
+                min="1"
+                value={wateringDuration}
+                onChange={(event) =>
+                  setWateringDuration(Number(event.target.value))
+                }
+              />
+            </label>
 
             <button onClick={addWatering}>+ Add</button>
           </div>

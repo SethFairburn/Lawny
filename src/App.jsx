@@ -10,6 +10,14 @@ import Equipment from "./pages/Equipment";
 
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
+  const goToPage = (page) => {
+    setActivePage(page);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
   const [applications, setApplications] = useState([
     {
       id: 1,
@@ -89,15 +97,19 @@ function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div>
-          <h1>Lawny</h1>
-          <p>Your lawn, organized.</p>
-        </div>
+      <div className="app-header">
+        <header className="topbar">
+          <div>
+            <h1 className="lawny-logo" onClick={() => goToPage("dashboard")}>
+              Lawny
+            </h1>
+            <p>Your lawn, organized.</p>
+          </div>
 
-        <div className="location">Austin, TX</div>
-      </header>
-      <Navigation activePage={activePage} setActivePage={setActivePage} />
+          <div className="location">Austin, TX</div>
+        </header>
+        <Navigation activePage={activePage} setActivePage={goToPage} />
+      </div>
       {activePage === "dashboard" && (
         <main className="dashboard">
           <section className="welcome">

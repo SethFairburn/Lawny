@@ -104,58 +104,76 @@ function Applications({
         </div>
 
         <div className="application-form-fields">
-          <select
-            value={applicationType}
-            onChange={(event) => {
-              setApplicationType(event.target.value);
-              setApplicationProduct("");
-            }}
-          >
-            <option value="Fertilizer">Fertilizer</option>
-            <option value="Pre-Emergent">Pre-Emergent</option>
-            <option value="Post-Emergent">Post-Emergent</option>
-            <option value="Fungicide">Fungicide</option>
-            <option value="Insecticide">Insecticide</option>
-            <option value="Soil Amendment">Soil Amendment</option>
-          </select>
-          <select
-            value={applicationProduct}
-            onChange={(event) => {
-              const selectedValue = event.target.value;
+          <label className="application-field">
+            <span>Type</span>
 
-              if (selectedValue === "add-new") {
-                setActivePage("products");
-                return;
-              }
+            <select
+              value={applicationType}
+              onChange={(event) => {
+                setApplicationType(event.target.value);
+                setApplicationProduct("");
+              }}
+            >
+              <option value="Fertilizer">Fertilizer</option>
+              <option value="Pre-Emergent">Pre-Emergent</option>
+              <option value="Post-Emergent">Post-Emergent</option>
+              <option value="Fungicide">Fungicide</option>
+              <option value="Insecticide">Insecticide</option>
+              <option value="Soil Amendment">Soil Amendment</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
 
-              setApplicationProduct(selectedValue);
-            }}
-          >
-            <option value="">Select product</option>
+          <label className="application-field">
+            <span>Product</span>
 
-            {matchingProducts.map((product) => (
-              <option key={product.id} value={product.name}>
-                {product.name}
-              </option>
-            ))}
+            <select
+              value={applicationProduct}
+              onChange={(event) => {
+                const selectedValue = event.target.value;
 
-            <option value="add-new">+ Add new product</option>
-          </select>
+                if (selectedValue === "add-new") {
+                  setActivePage("products");
+                  return;
+                }
 
-          <input
-            type="date"
-            value={applicationDate}
-            onChange={(event) => setApplicationDate(event.target.value)}
-          />
+                setApplicationProduct(selectedValue);
+              }}
+            >
+              <option value="">Select product</option>
 
-          <input
-            type="text"
-            placeholder="Rate / Amount"
-            value={applicationRate}
-            onChange={(event) => setApplicationRate(event.target.value)}
-          />
+              {matchingProducts.map((product) => (
+                <option key={product.id} value={product.name}>
+                  {product.name}
+                </option>
+              ))}
 
-          <button onClick={addApplication}>+ Add Application</button>
+              <option value="add-new">+ Add new product</option>
+            </select>
+          </label>
+
+          <label className="application-field">
+            <span>Date</span>
+
+            <input
+              type="date"
+              value={applicationDate}
+              onChange={(event) => setApplicationDate(event.target.value)}
+            />
+          </label>
+
+          <label className="application-field">
+            <span>Rate</span>
+
+            <input
+              type="text"
+              placeholder="Example: 5 lbs / 1,000 sq ft"
+              value={applicationRate}
+              onChange={(event) => setApplicationRate(event.target.value)}
+            />
+          </label>
+
+          <button onClick={addApplication}>+ Add</button>
         </div>
       </section>
       <section className="applications-section">
