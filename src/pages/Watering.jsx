@@ -1,50 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Watering({ wateringSchedule, setWateringSchedule }) {
-  const [wateringDay, setWateringDay] = useState("Monday");
+  const [wateringDay, setWateringDay] = useState("MONDAY");
   const [wateringTime, setWateringTime] = useState("06:00");
   const [wateringDuration, setWateringDuration] = useState(20);
-  const dayOrder = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-  const today = new Date();
-  const currentDayIndex = today.getDay();
 
-  const scheduleWithDate = wateringSchedule.map((watering) => {
-    const wateringDayIndex = dayOrder.indexOf(watering.day);
+  const loadWateringSchedule = () => {
+    fetch("http://localhost:8080/api/watering")
+      .then((response) => response.json())
+      .then((data) => {
+        setWateringSchedule(data);
+      })
+      .catch((error) => {
+        console.error("Error loading watering schedule:", error);
+      });
+  };
 
-    let daysAway = (wateringDayIndex - currentDayIndex + 7) % 7;
+  useEffect(() => {
+    loadWateringSchedule();
+  }, []);
 
-    const [hour, minute] = watering.time.split(":");
+  const nextWatering = wateringSchedule[0];
 
-    const wateringDate = new Date(today);
-
-    wateringDate.setDate(today.getDate() + daysAway);
-
-    wateringDate.setHours(Number(hour), Number(minute), 0, 0);
-
-    if (wateringDate <= today) {
-      wateringDate.setDate(wateringDate.getDate() + 7);
-      daysAway += 7;
-    }
-
-    return {
-      ...watering,
-      daysAway,
-      wateringDate,
-    };
-  });
-
-  const sortedSchedule = [...scheduleWithDate].sort(
-    (a, b) => a.wateringDate - b.wateringDate,
-  );
-  const nextWatering = sortedSchedule[0];
+  const formatDay = (day) => {
+    return day.charAt(0) + day.slice(1).toLowerCase();
+  };
 
   const formatWateringTime = (time) => {
     const [hour, minute] = time.split(":");
@@ -59,14 +39,24 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
   };
 
   const addWatering = () => {
-    const newWatering = {
-      id: Date.now(),
-      day: wateringDay,
-      time: wateringTime,
-      duration: wateringDuration,
-    };
-
-    setWateringSchedule([...wateringSchedule, newWatering]);
+    fetch("http://localhost:8080/api/watering", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        day: wateringDay,
+        time: wateringTime,
+        minutes: wateringDuration,
+      }),
+    })
+      .then((response) => response.json())
+      .then(() => {
+        loadWateringSchedule();
+      })
+      .catch((error) => {
+        console.error("Error adding watering:", error);
+      });
   };
 
   const removeWatering = (wateringId) => {
@@ -89,7 +79,7 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
           <div>
             <p className="eyebrow">NEXT WATERING</p>
 
-            <h3>{nextWatering.day}</h3>
+            <h3>{formatDay(nextWatering.day)}</h3>
 
             <p className="watering-time">
               {formatWateringTime(nextWatering.time)}
@@ -100,7 +90,7 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
             <span>💧</span>
 
             <div>
-              <strong>{nextWatering.duration} minutes</strong>
+              <strong>{nextWatering.minutes} minutes</strong>
               <p>Scheduled</p>
             </div>
 
@@ -135,13 +125,13 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
                 value={wateringDay}
                 onChange={(event) => setWateringDay(event.target.value)}
               >
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-                <option value="Sunday">Sunday</option>
+                <option value="MONDAY">Monday</option>
+                <option value="TUESDAY">Tuesday</option>
+                <option value="WEDNESDAY">Wednesday</option>
+                <option value="THURSDAY">Thursday</option>
+                <option value="FRIDAY">Friday</option>
+                <option value="SATURDAY">Saturday</option>
+                <option value="SUNDAY">Sunday</option>
               </select>
             </label>
 
@@ -173,15 +163,15 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
         </div>
 
         <div className="watering-schedule-list">
-          {sortedSchedule.slice(1).map((watering) => (
+          {wateringSchedule.slice(1).map((watering) => (
             <div className="watering-schedule-row" key={watering.id}>
               <div>
-                <strong>{watering.day}</strong>
+                <strong>{formatDay(watering.day)}</strong>
                 <p>{formatWateringTime(watering.time)}</p>
               </div>
 
               <div className="watering-row-actions">
-                <span>{watering.duration} minutes</span>
+                <span>{watering.minutes} minutes</span>
 
                 <button onClick={() => removeWatering(watering.id)}>
                   Remove
