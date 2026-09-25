@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Applications({
   applications,
@@ -10,6 +10,22 @@ function Applications({
   const [applicationProduct, setApplicationProduct] = useState("");
   const [applicationDate, setApplicationDate] = useState("");
   const [applicationRate, setApplicationRate] = useState("");
+
+  const loadApplications = () => {
+    fetch("http://localhost:8080/api/applications")
+      .then((response) => response.json())
+      .then((data) => {
+        setApplications(data);
+      })
+      .catch((error) => {
+        console.error("Error loading applications:", error);
+      });
+  };
+
+  useEffect(() => {
+    loadApplications();
+  }, []);
+
   const matchingProducts = products.filter(
     (product) => product.type === applicationType,
   );
@@ -19,28 +35,42 @@ function Applications({
 
   const upcomingApplications = applications
     .filter((application) => {
-      const applicationDate = new Date(`${application.date}T00:00:00`);
+      const applicationDate = new Date(`${application.scheduledDate}T00:00:00`);
       return applicationDate >= today;
     })
     .sort(
-      (a, b) => new Date(`${a.date}T00:00:00`) - new Date(`${b.date}T00:00:00`),
+      (a, b) =>
+        new Date(`${a.scheduledDate}T00:00:00`) -
+        new Date(`${b.scheduledDate}T00:00:00`),
     );
 
   const nextApplication = upcomingApplications[0];
 
   const addApplication = () => {
-    const newApplication = {
-      id: Date.now(),
-      type: applicationType,
-      product: applicationProduct,
-      date: applicationDate,
-      rate: applicationRate,
-    };
-    setApplications([...applications, newApplication]);
-    setApplicationType("Fertilizer");
-    setApplicationProduct("");
-    setApplicationDate("");
-    setApplicationRate("");
+    fetch("http://localhost:8080/api/applications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: Number(applicationProduct),
+        scheduledDate: applicationDate,
+        rate: applicationRate,
+        appliedDate: null,
+      }),
+    })
+      .then((response) => response.json())
+      .then(() => {
+        setApplicationType("Fertilizer");
+        setApplicationProduct("");
+        setApplicationDate("");
+        setApplicationRate("");
+
+        loadApplications();
+      })
+      .catch((error) => {
+        console.error("Error adding application:", error);
+      });
   };
 
   const removeApplication = (applicationId) => {
@@ -73,12 +103,12 @@ function Applications({
         <section className="next-application-card">
           <div>
             <p className="eyebrow">NEXT APPLICATION</p>
-            <h3>{nextApplication.type}</h3>
-            <p>{nextApplication.product}</p>
+            <h3>{nextApplication.product.category}</h3>
+            <p>{nextApplication.product.name}</p>
           </div>
 
           <div className="application-details">
-            <span>{formatApplicationDate(nextApplication.date)}</span>
+            <span>{formatApplicationDate(nextApplication.scheduledDate)}</span>
             <span>{nextApplication.rate}</span>
 
             <button onClick={() => removeApplication(nextApplication.id)}>
@@ -143,7 +173,7 @@ function Applications({
               <option value="">Select product</option>
 
               {matchingProducts.map((product) => (
-                <option key={product.id} value={product.name}>
+                <option key={product.id} value={product.id}>
                   {product.name}
                 </option>
               ))}
@@ -188,12 +218,12 @@ function Applications({
           {upcomingApplications.slice(1).map((application) => (
             <div className="application-row" key={application.id}>
               <div>
-                <strong>{application.type}</strong>
-                <p>{application.product}</p>
+                <strong>{application.product.category}</strong>
+                <p>{application.product.name}</p>
               </div>
 
               <div className="application-details">
-                <span>{formatApplicationDate(application.date)}</span>
+                <span>{formatApplicationDate(application.scheduledDate)}</span>
                 <span>{application.rate}</span>
 
                 <button onClick={() => removeApplication(application.id)}>

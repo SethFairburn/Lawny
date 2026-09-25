@@ -4,6 +4,7 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
   const [wateringDay, setWateringDay] = useState("MONDAY");
   const [wateringTime, setWateringTime] = useState("06:00");
   const [wateringDuration, setWateringDuration] = useState(20);
+  const [editingWateringId, setEditingWateringId] = useState(null);
 
   const loadWateringSchedule = () => {
     fetch("http://localhost:8080/api/watering")
@@ -38,6 +39,44 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
     });
   };
 
+  const editWatering = (watering) => {
+    setEditingWateringId(watering.id);
+    setWateringDay(watering.day);
+    setWateringTime(watering.time);
+    setWateringDuration(watering.minutes);
+  };
+
+  const updateWatering = () => {
+    fetch(`http://localhost:8080/api/watering/${editingWateringId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        day: wateringDay,
+        time: wateringTime,
+        minutes: wateringDuration,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to update watering schedule");
+        }
+
+        return response.json();
+      })
+      .then(() => {
+        setEditingWateringId(null);
+        setWateringDay("MONDAY");
+        setWateringTime("06:00");
+        setWateringDuration(20);
+        loadWateringSchedule();
+      })
+      .catch((error) => {
+        console.error("Error updating watering schedule:", error);
+      });
+  };
+
   const addWatering = () => {
     fetch("http://localhost:8080/api/watering", {
       method: "POST",
@@ -60,11 +99,19 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
   };
 
   const removeWatering = (wateringId) => {
-    const updatedSchedule = wateringSchedule.filter(
-      (watering) => watering.id !== wateringId,
-    );
+    fetch(`http://localhost:8080/api/watering/${wateringId}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to delete watering schedule");
+        }
 
-    setWateringSchedule(updatedSchedule);
+        loadWateringSchedule();
+      })
+      .catch((error) => {
+        console.error("Error deleting watering schedule:", error);
+      });
   };
 
   return (
@@ -117,7 +164,11 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
             <p className="eyebrow">WEEKLY SCHEDULE</p>
             <h3>Watering Days</h3>
           </div>
-          <div className="watering-controls">
+          <div
+            className={`watering-controls ${
+              editingWateringId ? "watering-controls-editing" : ""
+            }`}
+          >
             <label className="watering-field">
               <span>Day</span>
 
@@ -153,18 +204,27 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
                 min="1"
                 value={wateringDuration}
                 onChange={(event) =>
-                  setWateringDuration(Number(event.target.value))
+                  setWateringDuration(
+                    event.target.value === "" ? "" : Number(event.target.value),
+                  )
                 }
               />
             </label>
 
-            <button onClick={addWatering}>+ Add</button>
+            <button onClick={editingWateringId ? updateWatering : addWatering}>
+              {editingWateringId ? "Save Changes" : "+ Add"}
+            </button>
           </div>
         </div>
 
         <div className="watering-schedule-list">
           {wateringSchedule.slice(1).map((watering) => (
-            <div className="watering-schedule-row" key={watering.id}>
+            <div
+              className={`watering-schedule-row ${
+                editingWateringId === watering.id ? "watering-row-editing" : ""
+              }`}
+              key={watering.id}
+            >
               <div>
                 <strong>{formatDay(watering.day)}</strong>
                 <p>{formatWateringTime(watering.time)}</p>
@@ -172,6 +232,8 @@ function Watering({ wateringSchedule, setWateringSchedule }) {
 
               <div className="watering-row-actions">
                 <span>{watering.minutes} minutes</span>
+
+                <button onClick={() => editWatering(watering)}>Edit</button>
 
                 <button onClick={() => removeWatering(watering.id)}>
                   Remove
