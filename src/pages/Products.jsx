@@ -5,6 +5,7 @@ function Products({ products, setProducts }) {
   const [productType, setProductType] = useState("Fertilizer");
   const [productAmount, setProductAmount] = useState("");
   const [productUnit, setProductUnit] = useState("lb");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const productIcons = {
     Fertilizer: "🌱",
@@ -25,6 +26,8 @@ function Products({ products, setProducts }) {
   }, [setProducts]);
 
   const addProduct = () => {
+    setErrorMessage("");
+
     const newProduct = {
       name: productName,
       category: productType,
@@ -39,7 +42,17 @@ function Products({ products, setProducts }) {
       },
       body: JSON.stringify(newProduct),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            throw new Error(
+              errorData.name || errorData.error || "Something went wrong",
+            );
+          });
+        }
+
+        return response.json();
+      })
       .then((savedProduct) => {
         setProducts([...products, savedProduct]);
 
@@ -47,6 +60,9 @@ function Products({ products, setProducts }) {
         setProductType("Fertilizer");
         setProductAmount("");
         setProductUnit("lb");
+      })
+      .catch((error) => {
+        setErrorMessage(error.message);
       });
   };
 
@@ -120,6 +136,7 @@ function Products({ products, setProducts }) {
 
           <button onClick={addProduct}>+ Add Product</button>
         </div>
+        {errorMessage && <p className="error-message">⚠ {errorMessage}</p>}
       </section>
 
       <section className="products-section">
