@@ -1,43 +1,67 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Products({ products, setProducts }) {
-
   const [productName, setProductName] = useState("");
   const [productType, setProductType] = useState("Fertilizer");
-  const [productSize, setProductSize] = useState("");
+  const [productAmount, setProductAmount] = useState("");
+  const [productUnit, setProductUnit] = useState("lb");
+
+  const productIcons = {
+    Fertilizer: "🌱",
+    "Pre-Emergent": "🧴",
+    "Post-Emergent": "🧪",
+    Fungicide: "🍄",
+    Insecticide: "🐛",
+    "Soil Amendment": "🪨",
+    Other: "📦",
+  };
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/products")
+      .then((response) => response.json())
+      .then((data) => {
+        setProducts(data);
+      });
+  }, [setProducts]);
 
   const addProduct = () => {
-    const productIcons = {
-      Fertilizer: "🌱",
-      "Pre-Emergent": "🧴",
-      "Post-Emergent": "🧪",
-      Fungicide: "🍄",
-      Insecticide: "🐛",
-      "Soil Amendment": "🪨",
-      Other: "📦",
-    };
-
     const newProduct = {
-      id: Date.now(),
       name: productName,
-      type: productType,
-      size: productSize,
-      icon: productIcons[productType],
+      category: productType,
+      amount: Number(productAmount),
+      unit: productUnit,
     };
 
-    setProducts([...products, newProduct]);
+    fetch("http://localhost:8080/api/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newProduct),
+    })
+      .then((response) => response.json())
+      .then((savedProduct) => {
+        setProducts([...products, savedProduct]);
 
-    setProductName("");
-    setProductType("Fertilizer");
-    setProductSize("");
+        setProductName("");
+        setProductType("Fertilizer");
+        setProductAmount("");
+        setProductUnit("lb");
+      });
   };
 
   const removeProduct = (productId) => {
-    const updatedProducts = products.filter(
-      (product) => product.id !== productId
-    );
+    fetch(`http://localhost:8080/api/products/${productId}`, {
+      method: "DELETE",
+    }).then((response) => {
+      if (response.ok) {
+        const updatedProducts = products.filter(
+          (product) => product.id !== productId,
+        );
 
-    setProducts(updatedProducts);
+        setProducts(updatedProducts);
+      }
+    });
   };
 
   return (
@@ -78,15 +102,23 @@ function Products({ products, setProducts }) {
           </select>
 
           <input
-            type="text"
-            placeholder="Size / amount"
-            value={productSize}
-            onChange={(event) => setProductSize(event.target.value)}
+            type="number"
+            placeholder="Amount"
+            value={productAmount}
+            onChange={(event) => setProductAmount(event.target.value)}
           />
 
-          <button onClick={addProduct}>
-            + Add Product
-          </button>
+          <select
+            value={productUnit}
+            onChange={(event) => setProductUnit(event.target.value)}
+          >
+            <option value="lb">lb</option>
+            <option value="oz">oz</option>
+            <option value="gal">gal</option>
+            <option value="fl oz">fl oz</option>
+          </select>
+
+          <button onClick={addProduct}>+ Add Product</button>
         </div>
       </section>
 
@@ -101,12 +133,15 @@ function Products({ products, setProducts }) {
         <div className="product-grid">
           {products.map((product) => (
             <article className="product-card" key={product.id}>
-              <div className="product-icon">{product.icon}</div>
-
+              <div className="product-icon">
+                {productIcons[product.category] || "📦"}
+              </div>
               <div className="product-card-content">
                 <h4>{product.name}</h4>
-                <p>{product.type}</p>
-                <span>{product.size}</span>
+                <p>{product.category}</p>
+                <span>
+                  {product.amount} {product.unit}
+                </span>
               </div>
 
               <button
