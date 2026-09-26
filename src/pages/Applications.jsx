@@ -10,6 +10,7 @@ function Applications({
   const [applicationProduct, setApplicationProduct] = useState("");
   const [applicationDate, setApplicationDate] = useState("");
   const [applicationRate, setApplicationRate] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const loadApplications = () => {
     fetch("http://localhost:8080/api/applications")
@@ -27,7 +28,7 @@ function Applications({
   }, []);
 
   const matchingProducts = products.filter(
-    (product) => product.type === applicationType,
+    (product) => product.category === applicationType,
   );
 
   const today = new Date();
@@ -47,6 +48,8 @@ function Applications({
   const nextApplication = upcomingApplications[0];
 
   const addApplication = () => {
+    setErrorMessage("");
+
     fetch("http://localhost:8080/api/applications", {
       method: "POST",
       headers: {
@@ -59,7 +62,22 @@ function Applications({
         appliedDate: null,
       }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            const message =
+              errorData.rate ||
+              errorData.productId ||
+              errorData.scheduledDate ||
+              errorData.error ||
+              "Something went wrong";
+
+            throw new Error(message);
+          });
+        }
+
+        return response.json();
+      })
       .then(() => {
         setApplicationType("Fertilizer");
         setApplicationProduct("");
@@ -69,7 +87,7 @@ function Applications({
         loadApplications();
       })
       .catch((error) => {
-        console.error("Error adding application:", error);
+        setErrorMessage(error.message);
       });
   };
 
@@ -205,6 +223,7 @@ function Applications({
 
           <button onClick={addApplication}>+ Add</button>
         </div>
+        {errorMessage && <p className="error-message">⚠ {errorMessage}</p>}
       </section>
       <section className="applications-section">
         <div className="section-heading">
