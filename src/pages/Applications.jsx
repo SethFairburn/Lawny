@@ -35,14 +35,19 @@ function Applications({
   today.setHours(0, 0, 0, 0);
 
   const upcomingApplications = applications
-    .filter((application) => {
-      const applicationDate = new Date(`${application.scheduledDate}T00:00:00`);
-      return applicationDate >= today;
-    })
+    .filter((application) => application.status === "UPCOMING")
     .sort(
       (a, b) =>
         new Date(`${a.scheduledDate}T00:00:00`) -
         new Date(`${b.scheduledDate}T00:00:00`),
+    );
+
+  const appliedApplications = applications
+    .filter((application) => application.status === "APPLIED")
+    .sort(
+      (a, b) =>
+        new Date(`${b.appliedDate}T00:00:00`) -
+        new Date(`${a.appliedDate}T00:00:00`),
     );
 
   const nextApplication = upcomingApplications[0];
@@ -115,6 +120,31 @@ function Applications({
       });
   };
 
+  const markApplicationAsApplied = (applicationId) => {
+    setErrorMessage("");
+
+    fetch(`http://localhost:8080/api/applications/${applicationId}/applied`, {
+      method: "PUT",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            throw new Error(
+              errorData.error || "Could not mark application as applied",
+            );
+          });
+        }
+
+        return response.json();
+      })
+      .then(() => {
+        loadApplications();
+      })
+      .catch((error) => {
+        setErrorMessage(error.message);
+      });
+  };
+
   const formatApplicationDate = (dateString) => {
     const date = new Date(`${dateString}T00:00:00`);
 
@@ -144,7 +174,11 @@ function Applications({
           <div className="application-details">
             <span>{formatApplicationDate(nextApplication.scheduledDate)}</span>
             <span>{nextApplication.rate}</span>
-
+            <button
+              onClick={() => markApplicationAsApplied(nextApplication.id)}
+            >
+              Mark Applied
+            </button>
             <button onClick={() => removeApplication(nextApplication.id)}>
               Remove
             </button>
@@ -260,10 +294,40 @@ function Applications({
               <div className="application-details">
                 <span>{formatApplicationDate(application.scheduledDate)}</span>
                 <span>{application.rate}</span>
-
+                <button
+                  onClick={() => markApplicationAsApplied(application.id)}
+                >
+                  Mark Applied
+                </button>
                 <button onClick={() => removeApplication(application.id)}>
                   Remove
                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className="applications-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">HISTORY</p>
+            <h3>Application History</h3>
+          </div>
+        </div>
+
+        <div className="applications-list">
+          {appliedApplications.map((application) => (
+            <div className="application-row" key={application.id}>
+              <div>
+                <strong>{application.product.category}</strong>
+                <p>{application.product.name}</p>
+              </div>
+
+              <div className="application-details">
+                <span>
+                  Applied {formatApplicationDate(application.appliedDate)}
+                </span>
+                <span>{application.rate}</span>
               </div>
             </div>
           ))}
