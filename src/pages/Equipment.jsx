@@ -1,31 +1,73 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Equipment({ equipment, setEquipment }) {
   const [equipmentName, setEquipmentName] = useState("");
   const [equipmentType, setEquipmentType] = useState("Mower");
   const [equipmentDetails, setEquipmentDetails] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/equipment")
+      .then((response) => response.json())
+      .then((data) => {
+        setEquipment(data);
+      });
+  }, [setEquipment]);
 
   const addEquipment = () => {
+    setErrorMessage("");
+
     const newEquipment = {
-      id: Date.now(),
       name: equipmentName,
       type: equipmentType,
       details: equipmentDetails,
     };
 
-    setEquipment([...equipment, newEquipment]);
+    fetch("http://localhost:8080/api/equipment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newEquipment),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            const message =
+              errorData.name || errorData.error || "Something went wrong";
 
-    setEquipmentName("");
-    setEquipmentType("Mower");
-    setEquipmentDetails("");
+            throw new Error(message);
+          });
+        }
+
+        return response.json();
+      })
+      .then((savedEquipment) => {
+        setEquipment([...equipment, savedEquipment]);
+
+        setEquipmentName("");
+        setEquipmentType("Mower");
+        setEquipmentDetails("");
+      })
+      .catch((error) => {
+        setErrorMessage(error.message);
+      });
   };
 
   const removeEquipment = (equipmentId) => {
-    const updatedEquipment = equipment.filter(
-      (item) => item.id !== equipmentId
-    );
+    fetch(`http://localhost:8080/api/equipment/${equipmentId}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Could not remove equipment");
+        }
 
-    setEquipment(updatedEquipment);
+        setEquipment(equipment.filter((item) => item.id !== equipmentId));
+      })
+      .catch((error) => {
+        console.error("Error removing equipment:", error);
+      });
   };
 
   return (
@@ -33,7 +75,9 @@ function Equipment({ equipment, setEquipment }) {
       <section className="welcome">
         <p className="eyebrow">TOOLS & EQUIPMENT</p>
         <h2>Equipment</h2>
-        <p>Keep track of the tools and equipment you use to care for your lawn.</p>
+        <p>
+          Keep track of the tools and equipment you use to care for your lawn.
+        </p>
       </section>
 
       <section className="equipment-form">
@@ -73,10 +117,9 @@ function Equipment({ equipment, setEquipment }) {
             onChange={(event) => setEquipmentDetails(event.target.value)}
           />
 
-          <button onClick={addEquipment}>
-            + Add Equipment
-          </button>
+          <button onClick={addEquipment}>+ Add Equipment</button>
         </div>
+        {errorMessage && <p className="error-message">⚠ {errorMessage}</p>}
       </section>
 
       <section className="equipment-section">
