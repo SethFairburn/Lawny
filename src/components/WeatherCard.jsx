@@ -1,11 +1,11 @@
-function WeatherCard({ temperature, condition, note }) {
+function WeatherCard({ temperature, condition, icon, note }) {
   return (
     <div className="weather-card">
       <p className="eyebrow">WEATHER</p>
       <h3>Today</h3>
 
       <div className="weather-main">
-        <span className="weather-icon">☀️</span>
+        <span className="weather-icon">{icon}</span>
 
         <div>
           <div className="temperature">{temperature}</div>
@@ -13,9 +13,7 @@ function WeatherCard({ temperature, condition, note }) {
         </div>
       </div>
 
-      <div className="weather-note">
-        {note}
-      </div>
+      <div className="weather-note">{note}</div>
     </div>
   );
 }

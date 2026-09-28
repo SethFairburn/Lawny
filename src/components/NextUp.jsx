@@ -1,19 +1,15 @@
-import { useState } from "react";
-
 function NextUp({ wateringSchedule, applications, setActivePage }) {
   const dayOrder = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
   ];
-  const [showAddMenu, setShowAddMenu] = useState(false);
 
-  // Convert watering schedules into dashboard items
-  const wateringItems = wateringSchedule.map((watering) => {
+  const getNextWateringDate = (watering) => {
     const now = new Date();
 
     const wateringDayIndex = dayOrder.indexOf(watering.day);
@@ -32,49 +28,44 @@ function NextUp({ wateringSchedule, applications, setActivePage }) {
       wateringDate.setDate(wateringDate.getDate() + 7);
     }
 
-    const formattedTime = wateringDate.toLocaleTimeString("en-US", {
+    return wateringDate;
+  };
+
+  const nextWatering = wateringSchedule
+    .map((watering) => ({
+      ...watering,
+      nextDate: getNextWateringDate(watering),
+    }))
+    .sort((a, b) => a.nextDate - b.nextDate)[0];
+
+  const nextApplication = applications
+    .filter((application) => application.status === "UPCOMING")
+    .sort(
+      (a, b) =>
+        new Date(`${a.scheduledDate}T00:00:00`) -
+        new Date(`${b.scheduledDate}T00:00:00`),
+    )[0];
+
+  const formatWateringTime = (time) => {
+    const [hour, minute] = time.split(":");
+
+    const date = new Date();
+    date.setHours(Number(hour), Number(minute));
+
+    return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
     });
+  };
 
-    return {
-      id: `watering-${watering.id}`,
-      icon: "💧",
-      title: "Water Lawn",
-      date: wateringDate,
-      dateLabel: wateringDate.toLocaleDateString("en-US", {
-        weekday: "long",
-      }),
-      detail: `${formattedTime} • ${watering.duration} minutes`,
-    };
-  });
-  // Convert applications into dashboard items
-  const applicationItems = applications
-    .map((application) => {
-      const applicationDate = new Date(`${application.date}T00:00:00`);
+  const formatApplicationDate = (dateString) => {
+    const date = new Date(`${dateString}T00:00:00`);
 
-      return {
-        id: `application-${application.id}`,
-        icon: "🌱",
-        title: application.type,
-        date: applicationDate,
-        dateLabel: applicationDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        detail: `${application.product} • ${application.rate}`,
-      };
-    })
-    .filter((application) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      return application.date >= today;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
     });
-
-  const upcomingItems = [...wateringItems, ...applicationItems].sort(
-    (a, b) => a.date - b.date,
-  );
+  };
 
   return (
     <section className="next-up">
@@ -83,69 +74,80 @@ function NextUp({ wateringSchedule, applications, setActivePage }) {
           <p className="eyebrow">SCHEDULE</p>
           <h3>Next Up</h3>
         </div>
-
-        <button onClick={() => setShowAddMenu(!showAddMenu)}>+ Add</button>
       </div>
-      {showAddMenu && (
-        <div className="add-launcher">
-          <button
-            onClick={() => {
-              setActivePage("watering");
-              setShowAddMenu(false);
-            }}
-          >
-            <span>💧</span>
+      <div className="task-grid">
+        {/* WATERING */}
+        <article
+          className="task-card watering-task-card"
+          onClick={() => setActivePage("watering")}
+        >
+          <div className="task-icon task-icon-water">💧</div>
 
-            <div>
-              <strong>Watering</strong>
-              <p>Schedule irrigation</p>
-            </div>
-          </button>
+          <div className="task-card-content">
+            <p className="eyebrow">NEXT WATERING</p>
 
-          <button
-            onClick={() => {
-              setActivePage("applications");
-              setShowAddMenu(false);
-            }}
-          >
-            <span>🌱</span>
+            {nextWatering ? (
+              <>
+                <h4>
+                  {nextWatering.nextDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                  })}
+                </h4>
 
-            <div>
-              <strong>Application</strong>
-              <p>Schedule fertilizer or treatment</p>
-            </div>
-          </button>
+                <p className="task-summary">
+                  {formatWateringTime(nextWatering.time)}
+                  <span>•</span>
+                  {nextWatering.minutes} minutes
+                </p>
+              </>
+            ) : (
+              <>
+                <h4>No watering scheduled</h4>
+                <p className="task-summary">
+                  Nothing currently on the schedule.
+                </p>
+              </>
+            )}
+          </div>
 
-          <button disabled>
-            <span>✂️</span>
+          <span className="task-link">View watering →</span>
+        </article>
 
-            <div>
-              <strong>Misc Task</strong>
-              <p>Coming later</p>
-            </div>
-          </button>
-        </div>
-      )}
+        {/* APPLICATION */}
+        <article
+          className="task-card application-task-card"
+          onClick={() => setActivePage("applications")}
+        >
+          <div className="task-icon task-icon-application">🌱</div>
 
-      {upcomingItems.length > 0 ? (
-        <div className="task-grid">
-          {upcomingItems.slice(0, 3).map((item) => (
-            <article className="task-card" key={item.id}>
-              <div className="task-icon">{item.icon}</div>
+          <div className="task-card-content">
+            <p className="eyebrow">NEXT APPLICATION</p>
 
-              <h4>{item.title}</h4>
-              <p>{item.dateLabel}</p>
-              <span>{item.detail}</span>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <div className="empty-state-icon">🌱</div>
-          <h4>You're all caught up.</h4>
-          <p>No watering or applications are currently scheduled.</p>
-        </div>
-      )}
+            {nextApplication ? (
+              <>
+                <h4>{nextApplication.product.category}</h4>
+
+                <p className="task-product">{nextApplication.product.name}</p>
+
+                <p className="task-summary">
+                  {formatApplicationDate(nextApplication.scheduledDate)}
+                  <span>•</span>
+                  {nextApplication.rate}
+                </p>
+              </>
+            ) : (
+              <>
+                <h4>No application scheduled</h4>
+                <p className="task-summary">
+                  Nothing currently on the schedule.
+                </p>
+              </>
+            )}
+          </div>
+
+          <span className="task-link">View applications →</span>
+        </article>
+      </div>
     </section>
   );
 }

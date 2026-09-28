@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import "./App.css";
 import WeatherCard from "./components/WeatherCard";
 import NextUp from "./components/NextUp";
@@ -10,6 +11,40 @@ import Equipment from "./pages/Equipment";
 
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
+  const [applications, setApplications] = useState([]);
+  const [wateringSchedule, setWateringSchedule] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [equipment, setEquipment] = useState([]);
+  const [lawns, setLawns] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const primaryLawn = lawns[0];
+
+  useEffect(() => {
+    fetch("http://localhost:8080/api/watering")
+      .then((response) => response.json())
+      .then((data) => setWateringSchedule(data));
+
+    fetch("http://localhost:8080/api/applications")
+      .then((response) => response.json())
+      .then((data) => setApplications(data));
+
+    fetch("http://localhost:8080/api/products")
+      .then((response) => response.json())
+      .then((data) => setProducts(data));
+
+    fetch("http://localhost:8080/api/lawns")
+      .then((response) => response.json())
+      .then((data) => setLawns(data));
+
+    fetch("http://localhost:8080/api/equipment")
+      .then((response) => response.json())
+      .then((data) => setEquipment(data));
+
+    fetch("http://localhost:8080/api/weather")
+      .then((response) => response.json())
+      .then((data) => setWeather(data));
+  }, []);
+
   const goToPage = (page) => {
     setActivePage(page);
 
@@ -18,82 +53,45 @@ function App() {
       behavior: "smooth",
     });
   };
-  const [applications, setApplications] = useState([
-    {
-      id: 1,
-      type: "Fertilizer",
-      product: "Lesco 15-5-10",
-      date: "2026-09-18",
-      rate: "5 lbs / 1,000 sq ft",
-    },
-    {
-      id: 2,
-      type: "Pre-Emergent",
-      product: "Prodiamine",
-      date: "2026-10-01",
-      rate: "Label rate",
-    },
-  ]);
-  const [wateringSchedule, setWateringSchedule] = useState([
-    {
-      id: 1,
-      day: "Monday",
-      time: "06:00",
-      duration: 20,
-    },
-    {
-      id: 2,
-      day: "Thursday",
-      time: "06:00",
-      duration: 20,
-    },
-    {
-      id: 3,
-      day: "Saturday",
-      time: "07:00",
-      duration: 15,
-    },
-  ]);
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Lesco 15-5-10",
-      type: "Fertilizer",
-      size: "40 lb bag",
-      icon: "🌱",
-    },
-    {
-      id: 2,
-      name: "Prodiamine",
-      type: "Pre-Emergent",
-      size: "5 lb container",
-      icon: "🧴",
-    },
-  ]);
-  const [equipment, setEquipment] = useState([
-    {
-      id: 1,
-      name: "Push Mower",
-      type: "Mower",
-      details: "21-inch mower",
-    },
-    {
-      id: 2,
-      name: "Broadcast Spreader",
-      type: "Spreader",
-      details: "Granular applications",
-    },
-  ]);
 
-  const week = [
-    { day: "Mon", task: "Water" },
-    { day: "Tue", task: "—" },
-    { day: "Wed", task: "—" },
-    { day: "Thu", task: "Water" },
-    { day: "Fri", task: "—" },
-    { day: "Sat", task: "Mow" },
-    { day: "Sun", task: "—" },
-  ];
+  const formatTime = (time) => {
+    const [hour, minute] = time.split(":");
+
+    const date = new Date();
+    date.setHours(Number(hour), Number(minute));
+
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const week = weather
+    ? weather.dailyForecast.map((forecast) => {
+        const date = new Date(`${forecast.date}T00:00:00`);
+
+        const fullDayName = date
+          .toLocaleDateString("en-US", {
+            weekday: "long",
+          })
+          .toUpperCase();
+
+        const watering = wateringSchedule.find(
+          (watering) => watering.day === fullDayName,
+        );
+
+        return {
+          date: forecast.date,
+          day: date.toLocaleDateString("en-US", {
+            weekday: "short",
+          }),
+          icon: forecast.icon,
+          condition: forecast.condition,
+          rainChance: forecast.rainChance,
+          watering,
+        };
+      })
+    : [];
 
   return (
     <div className="app">
@@ -119,9 +117,15 @@ function App() {
           </section>
           <section className="lawn-card">
             <div>
-              <p className="lawn-type">BERMUDA</p>
-              <h3>Backyard Lawn</h3>
-              <p>1,000 sq ft</p>
+              <p className="lawn-type">
+                {primaryLawn ? primaryLawn.grassType.toUpperCase() : "NO LAWN"}
+              </p>
+
+              <h3>{primaryLawn ? primaryLawn.name : "Add your lawn"}</h3>
+
+              {primaryLawn && (
+                <p>{primaryLawn.squareFeet.toLocaleString()} sq ft</p>
+              )}
             </div>
 
             <div className="lawn-status">
@@ -140,16 +144,32 @@ function App() {
               <h3>This Week</h3>
               <div className="week-list">
                 {week.map((item) => (
-                  <div className="week-row" key={item.day}>
+                  <div className="week-row" key={item.date}>
                     <strong>{item.day}</strong>
-                    <span>{item.task}</span>
+
+                    <div className="week-watering">
+                      {item.watering && (
+                        <>
+                          <span>💧</span>
+                          <span>{formatTime(item.watering.time)}</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="week-weather">
+                      <span className="week-weather-icon">{item.icon}</span>
+                      <span className="week-condition">{item.condition}</span>
+                      <span className="week-rain">{item.rainChance}% rain</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
             <WeatherCard
-              temperature="94°"
-              condition="Sunny"
+              temperature={
+                weather ? `${Math.round(weather.currentTemperature)}°` : "--°"
+              }
+              condition={weather ? weather.currentCondition : "Loading..."}
               note="Rain expected tomorrow. You may be able to skip your next watering."
             />
           </section>

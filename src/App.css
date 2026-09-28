@@ -222,52 +222,82 @@
 
 .task-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
 }
 
 .task-card {
   padding: 24px;
+  min-height: 180px;
 
   background-color: white;
   border: 1px solid #e0e7df;
   border-radius: 18px;
+
+  display: flex;
+  flex-direction: column;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  border-color: #c8d8ca;
 }
 
 .task-icon {
+  width: 48px;
+  height: 48px;
   margin-bottom: 18px;
+  border-radius: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   font-size: 28px;
 }
 
-.task-card h4 {
-  margin: 0 0 6px;
-  font-size: 18px;
+.task-icon-water {
+  background-color: #eaf5fb;
 }
 
-.task-card p {
-  margin: 0 0 4px;
+.task-icon-application {
+  background-color: #edf5ea;
+}
+
+.task-card-content h4 {
+  margin: 4px 0 6px;
+  font-size: 24px;
+}
+
+.task-product {
+  margin: 0 0 6px;
   color: #536057;
 }
 
-.task-card span {
+.task-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin: 0;
+  color: #5f685f;
+}
+
+.task-link {
+  margin-top: auto;
+  padding-top: 20px;
+
   font-size: 14px;
-  color: #7a847c;
-}
-
-.task-card.completed {
-  background-color: #f0f6ee;
-  border-color: #b9cfb7;
-}
-
-.task-card.completed h4,
-.task-card.completed p,
-.task-card.completed span {
-  opacity: 0.65;
-}
-
-.task-card.completed .complete-button {
-  background-color: #d8ead5;
-  color: #2f5c3c;
+  font-weight: 600;
+  color: #245b3a;
 }
 
 .dashboard-bottom {
@@ -298,8 +328,10 @@
 }
 
 .week-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: center;
+  gap: 16px;
 
   padding: 12px 0;
 
@@ -1110,6 +1142,44 @@
   background-color: rgba(79, 138, 98, 0.06);
 }
 
+.lawny-logo {
+  cursor: pointer;
+}
+
+.week-weather {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-weather-icon {
+  font-size: 18px;
+}
+
+.week-condition {
+  color: #536057;
+}
+
+.week-rain {
+  color: #7a847c;
+  font-size: 14px;
+}
+
+.week-watering {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 14px;
+  color: #536057;
+}
+
+
+
+
+
+
+
 /*mobile*/
 @media (max-width: 768px) {
   .topbar {
@@ -1118,10 +1188,6 @@
 
   .topbar h1 {
     font-size: 26px;
-  }
-
-  .lawny-logo {
-    cursor: pointer;
   }
 
   .navigation {
@@ -1151,10 +1217,6 @@
     align-items: flex-start;
     gap: 20px;
     padding: 22px;
-  }
-
-  .task-grid {
-    grid-template-columns: 1fr;
   }
 
   .dashboard-bottom {
@@ -1265,5 +1327,9 @@
 
   .equipment-card {
     align-items: flex-start;
+  }
+
+  .task-grid {
+    grid-template-columns: 1fr;
   }
 }
