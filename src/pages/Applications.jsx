@@ -92,11 +92,27 @@ function Applications({
   };
 
   const removeApplication = (applicationId) => {
-    const updatedApplications = applications.filter(
-      (application) => application.id !== applicationId,
-    );
+    setErrorMessage("");
 
-    setApplications(updatedApplications);
+    fetch(`http://localhost:8080/api/applications/${applicationId}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((errorData) => {
+            throw new Error(errorData.error || "Could not remove application");
+          });
+        }
+
+        setApplications(
+          applications.filter(
+            (application) => application.id !== applicationId,
+          ),
+        );
+      })
+      .catch((error) => {
+        setErrorMessage(error.message);
+      });
   };
 
   const formatApplicationDate = (dateString) => {
